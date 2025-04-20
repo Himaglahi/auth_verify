@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verify You're Not a Robot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .captcha-container {
+      max-width: 400px;
+      margin: 80px auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .captcha-container button {
+      padding: 12px;
+      font-size: 1rem;
+      width: 100%;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .captcha-container button:hover {
+      background-color: #45a049;
+    }
+
+    .alert {
+      margin-top: 1rem;
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="captcha-container">
+    <h2>Verify You're Not a Robot</h2>
+    <p>Please complete the CAPTCHA to proceed.</p>
+    
+    <!-- Google reCAPTCHA Widget -->
+    <div class="g-recaptcha" data-sitekey="your-site-key-here"></div>
+
+    <button onclick="verifyCaptcha()">Verify</button>
+    <div id="message" class="alert"></div>
+  </div>
+
+  <!-- External script -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script type="module" src="captcha.js"></script>
+</body>
+</html>

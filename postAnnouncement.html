@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Announcement</title>
+    <!-- Include the Supabase JavaScript client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+    <h1>Post Announcement</h1>
+    
+    <textarea id="announcementText" placeholder="Enter your announcement here..." rows="5" cols="50"></textarea><br><br>
+    <button id="postAnnouncementBtn">Post Announcement</button>
+
+    <script>
+        // Initialize Supabase Client
+        const supabaseUrl = 'https://yswgkemxlueyssnxartr.supabase.co';  // Replace with your Supabase project URL
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ';  // Replace with your Supabase anon key
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Function to post an announcement
+        document.getElementById('postAnnouncementBtn').addEventListener('click', async () => {
+            console.log("Button clicked!");
+            // Get teacher_id and schedule_id from sessionStorage
+            const teacher_id = sessionStorage.getItem("teacher_id");
+            const schedule_id = sessionStorage.getItem("schedule_id");
+
+            // Check if teacher_id and schedule_id exist
+            if (!teacher_id || !schedule_id) {
+                alert("Teacher ID or Schedule ID not found.");
+                console.log("Teacher ID or Schedule ID not found.");
+                return;
+            }
+
+            // Get the announcement text from the textarea
+            const announcementText = document.getElementById('announcementText').value;
+
+            // Check if the announcement text is empty
+            if (!announcementText) {
+                alert("Announcement text is required.");
+                return;
+            }
+
+            // Insert the announcement into the Supabase table
+            console.log("Attempting to insert announcement...");
+            const { data, error } = await supabase
+                .from('announcements')
+                .insert([{
+                    teacher_id,
+                    schedule_id,
+                    announcement_text: announcementText, // Ensure this matches the column name in your table
+                    posted_at: new Date().toISOString() // This ensures proper formatting for timestamp
+                }]);
+
+            // Handle success or error
+            if (error) {
+                console.error("Error posting announcement:", error.message);
+                alert("Failed to post announcement. " + error.message);
+            } else {
+                console.log("Announcement posted successfully:", data);
+                alert("Announcement posted successfully.");
+            }
+        });
+    </script>
+</body>
+</html>

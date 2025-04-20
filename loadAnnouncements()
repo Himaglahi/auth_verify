@@ -1,0 +1,36 @@
+async function loadAnnouncements() {
+    const section = document.getElementById('section').value;
+    const subject = document.getElementById('subject').value;
+    if (!section || !subject) return;
+
+    const { data: schedules, error: scheduleError } = await supabase
+        .from('schedules')
+        .select('id')
+        .eq('subject_code', subject);
+
+    if (scheduleError || schedules.length === 0) {
+        console.error('Error fetching schedule:', scheduleError?.message);
+        return;
+    }
+
+    const scheduleId = schedules[0].id;
+    sessionStorage.setItem("schedule_id", scheduleId);
+
+    const { data: announcements, error: announcementError } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('schedule_id', scheduleId)
+        .order('timestamp', { ascending: false });
+
+    if (announcementError) {
+        console.error('Error loading announcements:', announcementError.message);
+        return;
+    }
+
+    const tooltips = document.querySelectorAll('.tooltip');
+    tooltips.forEach(t => t.textContent = 'No announcement');
+
+    if (announcements.length > 0) {
+        tooltips.forEach(t => t.textContent = announcements[0].message);
+    }
+}

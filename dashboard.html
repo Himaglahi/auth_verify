@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+    <button id="logoutButton" class="px-4 py-2 text-sm bg-danger text-white rounded-md">
+        Logout
+      </button>
+
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrailRunner PH | Strava-Style Jogging Trails</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#fc4c02', // Strava orange
+                        secondary: '#f93e17',
+                        accent: '#10b981',
+                        danger: '#ef4444',
+                        dark: '#1f2937',
+                        trail: {
+                            easy: '#10b981',
+                            moderate: '#f59e0b',
+                            difficult: '#ef4444'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .map-container {
+            height: 500px;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .trail-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .trail-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .elevation-chart {
+            height: 120px;
+            background: linear-gradient(to top, #e5e7eb, #f3f4f6);
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .elevation-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80%;
+            background: linear-gradient(to right, #fc4c02, #f93e17);
+            clip-path: polygon(
+                0% 100%,
+                5% 70%,
+                15% 50%,
+                25% 60%,
+                35% 30%,
+                45% 50%,
+                55% 20%,
+                65% 40%,
+                75% 10%,
+                85% 30%,
+                95% 5%,
+                100% 25%,
+                100% 100%
+            );
+        }
+        
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #fc4c02, #f93e17);
+            transition: width 0.5s ease;
+        }
+        
+        .strava-button {
+            background: linear-gradient(to right, #fc4c02, #f93e17);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .strava-button:hover {
+            background: linear-gradient(to right, #f93e17, #fc4c02);
+        }
+        
+        .heatmap-gradient {
+            background: linear-gradient(to right, 
+                rgba(255,255,204,0.7),
+                rgba(255,237,160,0.7),
+                rgba(254,217,118,0.7),
+                rgba(254,178,76,0.7),
+                rgba(253,141,60,0.7),
+                rgba(252,78,42,0.7),
+                rgba(227,26,28,0.7),
+                rgba(189,0,38,0.7),
+                rgba(128,0,38,0.7));
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg hidden md:block">
+            <div class="p-4 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-running text-primary mr-2"></i>
+                    TrailRunner PH
+                </h1>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg bg-gray-100">
+                            <i class="fas fa-map-marked-alt text-primary mr-3"></i>
+                            <span>Explore</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-route mr-3 text-gray-500"></i>
+                            <span>My Activities</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-trophy mr-3 text-gray-500"></i>
+                            <span>Challenges</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-users mr-3 text-gray-500"></i>
+                            <span>Clubs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chart-line mr-3 text-gray-500"></i>
+                            <span>Training</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 mt-auto">
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <h3 class="font-medium text-sm mb-2">Weekly Progress</h3>
+                    <div class="progress-bar mb-2">
+                        <div class="progress-fill" style="width: 65%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600">25km of 40km goal</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm">
+                <div class="px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button class="md:hidden text-gray-500 mr-2">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-lg font-semibold text-gray-800">Philippines Trail Network</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" placeholder="Search trails..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <button class="relative text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute top-0 right-0 h-2 w-2 rounded-full bg-danger"></span>
+                        </button>
+                        <div class="flex items-center space-x-2">
+                            <button id="recordButton" class="px-3 py-1 text-sm strava-button rounded-md">
+                                <i class="fas fa-play mr-1"></i> Record
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <main class="p-4 md:p-6">
+                <!-- Map Container -->
+                <div class="map-container mb-6">
+                    <div id="map"></div>
+                    <div class="absolute bottom-4 left-4 z-10 bg-white p-2 rounded-lg shadow-md">
+                        <div class="flex space-x-2">
+                            <button id="heatmapToggle" class="px-3 py-1 text-xs bg-gray-100 rounded-md">
+                                <i class="fas fa-fire mr-1"></i> Heatmap
+                            </button>
+                            <button id="trailsToggle" class="px-3 py-1 text-xs bg-primary text-white rounded-md">
+                                <i class="fas fa-route mr-1"></i> Trails
+                            </button>
+                            <button id="terrainToggle" class="px-3 py-1 text-xs bg-gray-100 rounded-md">
+                                <i class="fas fa-mountain mr-1"></i> Terrain
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">This Week</p>
+                                <h3 class="text-2xl font-bold mt-1">25km</h3>
+                                <p class="text-xs text-primary mt-1 flex items-center">
+                                    <i class="fas fa-arrow-up mr-1"></i>
+                                    <span>+8km from last week</span>
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full">
+                                <i class="fas fa-running text-primary text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Elevation</p>
+                                <h3 class="text-2xl font-bold mt-1">1,240m</h3>
+                                <p class="text-xs text-warning mt-1 flex items-center">
+                                    <i class="fas fa-mountain mr-1"></i>
+                                    <span>Highest: 756m</span>
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-full">
+                                <i class="fas fa-chart-line text-warning text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Time</p>
+                                <h3 class="text-2xl font-bold mt-1">5h 42m</h3>
+                                <p class="text-xs text-gray-500 mt-1 flex items-center">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    <span>Longest: 2h 15m</span>
+                                </p>
+                            </div>
+                            <div class="bg-gray-200 bg-opacity-10 p-3 rounded-full">
+                                <i class="fas fa-stopwatch text-gray-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Calories</p>
+                                <h3 class="text-2xl font-bold mt-1">2,850</h3>
+                                <p class="text-xs text-accent mt-1 flex items-center">
+                                    <i class="fas fa-fire mr-1"></i>
+                                    <span>1,200 today</span>
+                                </p>
+                            </div>
+                            <div class="bg-accent bg-opacity-10 p-3 rounded-full">
+                                <i class="fas fa-burn text-accent text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Recent Activities</h3>
+                        <button class="text-sm text-primary font-medium flex items-center">
+                            <span>View All</span>
+                            <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <!-- Activity 1 -->
+                        <div class="p-4 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center mr-3">
+                                        <i class="fas fa-running text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">Morning Trail Run</p>
+                                        <p class="text-sm text-gray-500">Today • Osmeña Peak, Cebu</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium">8.4 km</p>
+                                        <p class="text-xs text-gray-500">45:12</p>
+                                    </div>
+                                    <button class="text-xs strava-button px-3 py-1 rounded-full">
+                                        Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Activity 2 -->
+                        <div class="p-4 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center mr-3">
+                                        <i class="fas fa-running text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">Weekend Long Run</p>
+                                        <p class="text-sm text-gray-500">Nov 12 • Mount Manunggal</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium">15.2 km</p>
+                                        <p class="text-xs text-gray-500">1:32:45</p>
+                                    </div>
+                                    <button class="text-xs strava-button px-3 py-1 rounded-full">
+                                        Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Activity 3 -->
+                        <div class="p-4 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center mr-3">
+                                        <i class="fas fa-running text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium">Recovery Jog</p>
+                                        <p class="text-sm text-gray-500">Nov 10 • Sirao Peak</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium">5.3 km</p>
+                                        <p class="text-xs text-gray-500">32:18</p>
+                                    </div>
+                                    <button class="text-xs strava-button px-3 py-1 rounded-full">
+                                        Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Popular Trails -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Popular Trails Near You</h3>
+                        <button class="text-sm text-primary font-medium flex items-center">
+                            <span>View All</span>
+                            <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                        <!-- Trail 1 -->
+                        <div class="trail-card bg-white border border-gray-200 rounded-lg overflow-hidden fade-in">
+                            <div class="p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold">Osmeña Peak</h4>
+                                        <div class="flex items-center mt-1">
+                                            <span class="text-xs px-2 py-1 bg-trail.moderate text-white rounded mr-2">Moderate</span>
+                                            <span class="text-xs text-gray-500"><i class="fas fa-route mr-1"></i> 4.2 km</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"><i class="fas fa-star mr-1"></i> 4.8</span>
+                                    </div>
+                                </div>
+                                <div class="elevation-chart mt-3">
+                                    <div class="elevation-line"></div>
+                                </div>
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex space-x-2">
+                                        <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full"><i class="fas fa-user-friends mr-1"></i> 12 active</span>
+                                    </div>
+                                    <button class="text-xs strava-button px-3 py-1 rounded-full">
+                                        View
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Trail 2 -->
+                        <div class="trail-card bg-white border border-gray-200 rounded-lg overflow-hidden fade-in">
+                            <div class="p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold">Mount Manunggal</h4>
+                                        <div class="flex items-center mt-1">
+                                            <span class="text-xs px-2 py-1 bg-trail.difficult text-white rounded mr-2">Difficult</span>
+                                            <span class="text-xs text-gray-500"><i class="fas fa-route mr-1"></i> 8.5 km</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"><i class="fas fa-star mr-1"></i> 4.6</span>
+                                    </div>
+                                </div>
+                                <div class="elevation-chart mt-3">
+                                    <div class="elevation-line"></div>
+                                </div>
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex space-x-2">
+                                        <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full"><i class="fas fa-user-friends mr-1"></i> 8 active</span>
+                                    </div>
+                                    <button class="text-xs strava-button px-3 py-1 rounded-full">
+                                        View
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Trail 3 -->
+                        <div class="trail-card bg-white border border-gray-200 rounded-lg overflow-hidden fade-in">
+                            <div class="p-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="font-bold">Sirao Peak</h4>
+                                        <div class="flex items-center mt-1">
+                                            <span class="text-xs px-2 py-1 bg-trail.easy text-white rounded mr-2">Easy</span>
+                                            <span class="text-xs text-gray-500"><i class="fas fa-route mr-1"></i> 3.0 km</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"><i class="fas fa-star mr-1"></i> 4.9</span>
+                                    </div>
+                                </div>
+                                <div class="elevation-chart mt-3">
+                                    <div class="elevation-line"></div>
+                                </div>
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex space-x-2">
+                                        <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full"><i class="fas fa-user-friends mr-1"></i> 22 active</span>
+                                    </div>
+                                    <button class="text-xs strava-button px-3 py-1 rounded-full">
+                                        View
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Google Map with Strava-like styling
+        function initMap() {
+            // Center on Philippines
+            const philippines = { lat: 12.8797, lng: 121.7740 };
+            
+            // Create the map with terrain view
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 7,
+                center: philippines,
+                styles: [
+                    {
+                        "featureType": "all",
+                        "elementType": "labels.text.fill",
+                        "stylers": [
+                            {
+                                "saturation": 36
+                            },
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 40
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "all",
+                        "elementType": "labels.text.stroke",
+                        "stylers": [
+                            {
+                                "visibility": "on"
+                            },
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 16
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "all",
+                        "elementType": "labels.icon",
+                        "stylers": [
+                            {
+                                "visibility": "off"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "administrative",
+                        "elementType": "geometry.fill",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 20
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "administrative",
+                        "elementType": "geometry.stroke",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 17
+                            },
+                            {
+                                "weight": 1.2
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "landscape",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 20
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "poi",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 21
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.highway",
+                        "elementType": "geometry.fill",
+                        "stylers": [
+                            {
+                                "color": "#fc4c02"
+                            },
+                            {
+                                "lightness": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.highway",
+                        "elementType": "geometry.stroke",
+                        "stylers": [
+                            {
+                                "visibility": "off"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.arterial",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 18
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.local",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 16
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "transit",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 19
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "water",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 17
+                            }
+                        ]
+                    }
+                ]
+            });
+            
+            // Add heatmap data (mock data for Philippines)
+            const heatmapData = [
+                {location: new google.maps.LatLng(10.3157, 123.8854), weight: 2}, // Cebu
+                {location: new google.maps.LatLng(14.5995, 120.9842), weight: 3}, // Manila
+                {location: new google.maps.LatLng(16.0439, 120.3331), weight: 1}, // Pangasinan
+                {location: new google.maps.LatLng(7.1907, 125.4553), weight: 1}, // Davao
+                {location: new google.maps.LatLng(10.7202, 122.5621), weight: 2}, // Iloilo
+                {location: new google.maps.LatLng(13.9314, 121.6175), weight: 1}, // Batangas
+                {location: new google.maps.LatLng(16.4166, 120.5936), weight: 1}, // Baguio
+                {location: new google.maps.LatLng(10.5924, 122.6701), weight: 1}, // Bacolod
+                {location: new google.maps.LatLng(8.4542, 124.6319), weight: 1}, // Cagayan de Oro
+                {location: new google.maps.LatLng(9.6532, 123.8323), weight: 1}, // Tagbilaran
+                {location: new google.maps.LatLng(11.2430, 125.0050), weight: 1}, // Tacloban
+                {location: new google.maps.LatLng(13.1394, 123.7398), weight: 1}, // Legazpi
+                {location: new google.maps.LatLng(15.4700, 120.5853), weight: 1}, // Tarlac
+                {location: new google.maps.LatLng(14.6760, 121.0437), weight: 2}, // Quezon City
+                {location: new google.maps.LatLng(10.3764, 123.9573), weight: 1}, // Toledo
+                {location: new google.maps.LatLng(9.3068, 123.3054), weight: 1}, // Dumaguete
+                {location: new google.maps.LatLng(17.5747, 120.3869), weight: 1}, // Vigan
+                {location: new google.maps.LatLng(14.5031, 121.0419), weight: 1}, // Pasig
+                {location: new google.maps.LatLng(14.5378, 121.0014), weight: 1}, // Makati
+                {location: new google.maps.LatLng(14.6760, 120.9812), weight: 1}  // Manila Bay area
+            ];
+            
+            const heatmap = new google.maps.visualization.HeatmapLayer({
+                data: heatmapData,
+                map: null, // Initially not shown
+                gradient: [
+                    'rgba(255,255,204,0)',
+                    'rgba(255,237,160,0.1)',
+                    'rgba(254,217,118,0.2)',
+                    'rgba(254,178,76,0.3)',
+                    'rgba(253,141,60,0.4)',
+                    'rgba(252,78,42,0.5)',
+                    'rgba(227,26,28,0.6)',
+                    'rgba(189,0,38,0.7)',
+                    'rgba(128,0,38,0.8)'
+                ],
+                radius: 25
+            });
+            
+            // Add popular trails (mock data)
+            const trails = [
+                {
+                    name: "Osmeña Peak",
+                    position: { lat: 10.3157, lng: 123.4854 },
+                    difficulty: "moderate",
+                    length: 4.2,
+                    elevation: 1013
+                },
+                {
+                    name: "Mount Manunggal",
+                    position: { lat: 10.4157, lng: 123.6854 },
+                    difficulty: "difficult",
+                    length: 8.5,
+                    elevation: 1097
+                },
+                {
+                    name: "Sirao Peak",
+                    position: { lat: 10.3957, lng: 123.7854 },
+                    difficulty: "easy",
+                    length: 3.0,
+                    elevation: 756
+                },
+                {
+                    name: "Mount Batulao",
+                    position: { lat: 14.0333, lng: 120.8000 },
+                    difficulty: "moderate",
+                    length: 6.0,
+                    elevation: 811
+                },
+                {
+                    name: "Mount Maculot",
+                    position: { lat: 13.9333, lng: 121.0167 },
+                    difficulty: "moderate",
+                    length: 4.5,
+                    elevation: 930
+                }
+            ];
+            
+            const trailMarkers = [];
+            
+            trails.forEach(trail => {
+                const marker = new google.maps.Marker({
+                    position: trail.position,
+                    map: map,
+                    title: trail.name,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: trail.difficulty === "easy" ? '#10b981' : 
+                                  trail.difficulty === "moderate" ? '#f59e0b' : '#ef4444',
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: '#ffffff',
+                        scale: 8
+                    }
+                });
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="p-2">
+                            <h3 class="font-bold">${trail.name}</h3>
+                            <p class="text-sm">
+                                <span class="inline-block px-2 py-1 text-xs rounded ${
+                                    trail.difficulty === "easy" ? 'bg-green-500 text-white' : 
+                                    trail.difficulty === "moderate" ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
+                                }">${trail.difficulty.charAt(0).toUpperCase() + trail.difficulty.slice(1)}</span>
+                            </p>
+                            <p class="text-sm mt-1"><i class="fas fa-route mr-1"></i> ${trail.length} km</p>
+                            <p class="text-sm"><i class="fas fa-mountain mr-1"></i> ${trail.elevation}m elevation</p>
+                            <button class="mt-2 text-xs strava-button px-2 py-1 rounded">
+                                View Details
+                            </button>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+                
+                trailMarkers.push(marker);
+            });
+            
+            // Toggle controls
+            document.getElementById('heatmapToggle').addEventListener('click', function() {
+                if (heatmap.getMap()) {
+                    heatmap.setMap(null);
+                    this.classList.remove('bg-primary', 'text-white');
+                    this.classList.add('bg-gray-100');
+                } else {
+                    heatmap.setMap(map);
+                    this.classList.remove('bg-gray-100');
+                    this.classList.add('bg-primary', 'text-white');
+                }
+            });
+            
+            document.getElementById('trailsToggle').addEventListener('click', function() {
+                if (trailMarkers[0].getMap()) {
+                    trailMarkers.forEach(marker => marker.setMap(null));
+                    this.classList.remove('bg-primary', 'text-white');
+                    this.classList.add('bg-gray-100');
+                } else {
+                    trailMarkers.forEach(marker => marker.setMap(map));
+                    this.classList.remove('bg-gray-100');
+                    this.classList.add('bg-primary', 'text-white');
+                }
+            });
+            
+            document.getElementById('terrainToggle').addEventListener('click', function() {
+                if (map.getMapTypeId() === 'terrain') {
+                    map.setMapTypeId('roadmap');
+                    this.classList.remove('bg-primary', 'text-white');
+                    this.classList.add('bg-gray-100');
+                } else {
+                    map.setMapTypeId('terrain');
+                    this.classList.remove('bg-gray-100');
+                    this.classList.add('bg-primary', 'text-white');
+                }
+            });
+            
+            // Record button functionality
+            document.getElementById('recordButton').addEventListener('click', function() {
+                alert('Recording started! In a real app, this would begin tracking your run.');
+            });
+        }
+        
+        // Initialize the map when the page loads
+        window.initMap = initMap;
+        
+        // Load the Google Maps API with callback
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if Google Maps API is already loaded
+            if (typeof google === 'object' && typeof google.maps === 'object') {
+                initMap();
+            } else {
+                // Create script element to load Google Maps API
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization&callback=initMap`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+            
+            // Simple animation for trail cards when page loads
+            const trailCards = document.querySelectorAll('.trail-card');
+            
+            trailCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById('logoutButton').addEventListener('click', function() {
+          // Clear any session storage or cookies here, for example:
+          sessionStorage.clear(); // Clear session storage
+          // If you are using cookies, you can clear them here as well.
+      
+          // Redirect to the login page
+          window.location.href = 'login.html'; // Adjust the path to your login page
+        });
+      </script>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!-- verify.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Email Verification</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      width: 380px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .container h2 {
+      margin-bottom: 10px;
+    }
+
+    .warning {
+      background: #fff4e5;
+      color: #c0392b;
+      padding: 12px;
+      border-radius: 5px;
+      margin: 15px 0;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 14px;
+      color: green;
+    }
+
+    small {
+      display: block;
+      margin-top: 10px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Account Not Verified</h2>
+    <div class="warning">
+      Please verify your email to continue.
+    </div>
+    <p>We’ve sent a verification link to your email.</p>
+    <button onclick="resendEmail()">Resend Verification Email</button>
+    <div id="message"></div>
+    <small>After verifying, please login again.</small>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pzmjrsqltbsuuunocbvu.supabase.co", 
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bWpyc3FsdGJzdXV1bm9jYnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MzI4MzUsImV4cCI6MjA2MDMwODgzNX0.Rh40SalOAVZQm-CLdOgmsf5EANli5be319BM8sI8zYQ"
+    );
+
+    const email = localStorage.getItem('pendingEmail');
+
+    async function resendEmail() {
+      if (!email) {
+        document.getElementById("message").textContent = "No email found in session.";
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        document.getElementById("message").textContent = "Error: " + error.message;
+      } else {
+        document.getElementById("message").textContent = "Verification email has been resent.";
+      }
+    }
+  </script>
+</body>
+</html>
