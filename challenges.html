@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrailRunner PH | Challenges</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+        // Initialize Supabase client
+        const supabase = createClient(
+            "https://yswgkemxlueyssnxartr.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ"
+        );
+
+        // Check if user is authenticated
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user) {
+            window.location.href = "login.html";
+        }
+
+        // Handle logout
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            await supabase.auth.signOut();
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#fc4c02',
+                        secondary: '#f93e17',
+                        accent: '#10b981',
+                        danger: '#ef4444',
+                        dark: '#1f2937',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg hidden md:block transition-all duration-300 ease-in-out">
+            <div class="md:hidden p-4 flex justify-end">
+                <button onclick="toggleMobileMenu()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-running text-primary mr-2"></i>
+                    TrailRunner PH
+                </h1>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-map-marked-alt text-gray-500 mr-3"></i>
+                            <span>Explore</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='activities.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-route text-gray-500 mr-3"></i>
+                            <span>My Activities</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='challenges.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg bg-gray-100">
+                            <i class="fas fa-trophy text-primary mr-3"></i>
+                            <span>Challenges</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='clubs.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-users mr-3 text-gray-500"></i>
+                            <span>Clubs</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='training.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chart-line mr-3 text-gray-500"></i>
+                            <span>Training</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm">
+                <div class="px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="toggleMobileMenu()" class="md:hidden text-gray-500 mr-2">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-lg font-semibold text-gray-800">Challenges</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="logoutButton" class="px-4 py-2 text-sm bg-danger text-white rounded-md">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Challenges Content -->
+            <main class="p-6">
+                <!-- Active Challenges -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">Active Challenges</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Challenge Card 1 -->
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div class="h-40 bg-gradient-to-r from-primary to-secondary relative">
+                                <div class="absolute bottom-4 left-4 text-white">
+                                    <span class="bg-black bg-opacity-50 px-2 py-1 rounded text-sm">15 days left</span>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-semibold text-lg mb-2">100km Monthly Challenge</h4>
+                                <p class="text-gray-600 text-sm mb-4">Run 100km this month to earn the badge</p>
+                                <div class="mb-4">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span>Progress</span>
+                                        <span>65/100 km</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-200 rounded-full">
+                                        <div class="h-2 bg-primary rounded-full" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">
+                                        <i class="fas fa-users mr-1"></i> 1.2k participants
+                                    </span>
+                                    <button class="text-primary text-sm font-medium">View Details</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Challenge Card 2 -->
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div class="h-40 bg-gradient-to-r from-accent to-green-600 relative">
+                                <div class="absolute bottom-4 left-4 text-white">
+                                    <span class="bg-black bg-opacity-50 px-2 py-1 rounded text-sm">7 days left</span>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-semibold text-lg mb-2">Mountain Goat Challenge</h4>
+                                <p class="text-gray-600 text-sm mb-4">Climb 2000m elevation this week</p>
+                                <div class="mb-4">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span>Progress</span>
+                                        <span>1450/2000 m</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-200 rounded-full">
+                                        <div class="h-2 bg-accent rounded-full" style="width: 72.5%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">
+                                        <i class="fas fa-users mr-1"></i> 856 participants
+                                    </span>
+                                    <button class="text-accent text-sm font-medium">View Details</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Challenges -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Available Challenges</h3>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                Filter
+                            </button>
+                            <button class="px-3 py-1 text-sm bg-primary text-white rounded-md">
+                                Create Challenge
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Challenge List -->
+                    <div class="space-y-4">
+                        <!-- Challenge Item -->
+                        <div class="bg-white rounded-lg shadow p-4 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-mountain text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold">Trail Master Series</h4>
+                                        <p class="text-sm text-gray-500">Complete 5 different trail runs</p>
+                                    </div>
+                                </div>
+                                <button class="px-4 py-2 text-sm bg-primary text-white rounded-md">
+                                    Join Challenge
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- More Challenge Items -->
+                        <!-- Copy and modify the above challenge item structure for more items -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('fixed');
+            sidebar.classList.toggle('inset-0');
+            sidebar.classList.toggle('z-50');
+        }
+    </script>
+</body>
+</html> 

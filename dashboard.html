@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-
-    <button id="logoutButton" class="px-4 py-2 text-sm bg-danger text-white rounded-md">
-        Logout
-      </button>
-
-
-
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TrailRunner PH | Strava-Style Jogging Trails</title>
@@ -17,6 +8,38 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization"></script>
+    <script src="navigation.js" defer></script>
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+        // Initialize Supabase client
+        const supabase = createClient(
+            "https://yswgkemxlueyssnxartr.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ"
+        );
+
+        // Check if user is authenticated
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user) {
+            window.location.href = "login.html";
+        }
+
+        // Set up navigation state
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up click handlers for navigation
+            const navButtons = document.querySelectorAll('button[onclick^="window.location"]');
+            navButtons.forEach(button => {
+                const originalOnClick = button.getAttribute('onclick');
+                button.onclick = async function(e) {
+                    e.preventDefault();
+                    // Store navigation state
+                    sessionStorage.setItem('from_dashboard', 'true');
+                    // Execute the navigation
+                    eval(originalOnClick);
+                };
+            });
+        });
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -152,7 +175,12 @@
 <body class="bg-gray-50">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <div class="sidebar w-64 bg-white shadow-lg hidden md:block">
+        <div class="sidebar w-64 bg-white shadow-lg hidden md:block transition-all duration-300 ease-in-out">
+            <div class="md:hidden p-4 flex justify-end">
+                <button onclick="toggleMobileMenu()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
             <div class="p-4 border-b border-gray-200">
                 <h1 class="text-xl font-bold text-gray-800 flex items-center">
                     <i class="fas fa-running text-primary mr-2"></i>
@@ -162,34 +190,34 @@
             <nav class="p-4">
                 <ul class="space-y-2">
                     <li>
-                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg bg-gray-100">
+                        <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg bg-gray-100">
                             <i class="fas fa-map-marked-alt text-primary mr-3"></i>
                             <span>Explore</span>
-                        </a>
+                        </button>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <button onclick="window.location.href='activities.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
                             <i class="fas fa-route mr-3 text-gray-500"></i>
-                            <span>My Activities</span>
-                        </a>
+                            <span></span>
+                        </button>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <button onclick="window.location.href='challenges.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
                             <i class="fas fa-trophy mr-3 text-gray-500"></i>
                             <span>Challenges</span>
-                        </a>
+                        </button>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <button onclick="window.location.href='clubs.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
                             <i class="fas fa-users mr-3 text-gray-500"></i>
                             <span>Clubs</span>
-                        </a>
+                        </button>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <button onclick="window.location.href='training.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
                             <i class="fas fa-chart-line mr-3 text-gray-500"></i>
                             <span>Training</span>
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </nav>
@@ -211,7 +239,7 @@
             <header class="bg-white shadow-sm">
                 <div class="px-4 py-3 flex items-center justify-between">
                     <div class="flex items-center">
-                        <button class="md:hidden text-gray-500 mr-2">
+                        <button onclick="toggleMobileMenu()" class="md:hidden text-gray-500 mr-2">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
                         <h2 class="text-lg font-semibold text-gray-800">Philippines Trail Network</h2>
@@ -877,15 +905,52 @@
     </script>
 
     <script>
-        document.getElementById('logoutButton').addEventListener('click', function() {
-          // Clear any session storage or cookies here, for example:
-          sessionStorage.clear(); // Clear session storage
-          // If you are using cookies, you can clear them here as well.
-      
-          // Redirect to the login page
-          window.location.href = 'login.html'; // Adjust the path to your login page
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('fixed');
+            sidebar.classList.toggle('inset-0');
+            sidebar.classList.toggle('z-50');
+        }
+
+        async function navigateTo(page) {
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (user) {
+                    sessionStorage.setItem('from_dashboard', 'true');
+                    window.location.href = page + '.html';
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Navigation error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize all navigation handlers when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup navigation for each menu item
+            const menuItems = {
+                'exploreButton': 'dashboard',
+                'activitiesButton': 'activities',
+                'challengesButton': 'challenges',
+                'clubsButton': 'clubs',
+                'trainingButton': 'training'
+            };
+
+            // Add click handlers for all menu items
+            for (const [buttonId, page] of Object.entries(menuItems)) {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        navigateTo(page);
+                    });
+                }
+            }
         });
-      </script>
+    </script>
 
 </body>
 </html>

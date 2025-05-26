@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrailRunner PH | Training</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+        // Initialize Supabase client
+        const supabase = createClient(
+            "https://yswgkemxlueyssnxartr.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ"
+        );
+
+        // Check if user is authenticated
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user) {
+            window.location.href = "login.html";
+        }
+
+        // Handle logout
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            await supabase.auth.signOut();
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#fc4c02',
+                        secondary: '#f93e17',
+                        accent: '#10b981',
+                        danger: '#ef4444',
+                        dark: '#1f2937',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg hidden md:block transition-all duration-300 ease-in-out">
+            <div class="md:hidden p-4 flex justify-end">
+                <button onclick="toggleMobileMenu()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-running text-primary mr-2"></i>
+                    TrailRunner PH
+                </h1>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-map-marked-alt text-gray-500 mr-3"></i>
+                            <span>Explore</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='activities.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-route text-gray-500 mr-3"></i>
+                            <span>My Activities</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='challenges.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-trophy mr-3 text-gray-500"></i>
+                            <span>Challenges</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='clubs.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-users mr-3 text-gray-500"></i>
+                            <span>Clubs</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='training.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg bg-gray-100">
+                            <i class="fas fa-chart-line text-primary mr-3"></i>
+                            <span>Training</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm">
+                <div class="px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="toggleMobileMenu()" class="md:hidden text-gray-500 mr-2">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-lg font-semibold text-gray-800">Training</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="logoutButton" class="px-4 py-2 text-sm bg-danger text-white rounded-md">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Training Content -->
+            <main class="p-6">
+                <!-- Training Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Weekly Progress -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">Weekly Progress</h3>
+                        <canvas id="weeklyProgressChart" height="200"></canvas>
+                    </div>
+
+                    <!-- Training Metrics -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4">Training Metrics</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">Training Load</p>
+                                <div class="flex items-end space-x-2">
+                                    <p class="text-2xl font-bold">856</p>
+                                    <p class="text-sm text-green-500">+12%</p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">Recovery</p>
+                                <div class="flex items-end space-x-2">
+                                    <p class="text-2xl font-bold">Good</p>
+                                    <i class="fas fa-circle text-green-500"></i>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">Fitness</p>
+                                <div class="flex items-end space-x-2">
+                                    <p class="text-2xl font-bold">42.5</p>
+                                    <p class="text-sm text-primary">Peak</p>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">Fatigue</p>
+                                <div class="flex items-end space-x-2">
+                                    <p class="text-2xl font-bold">38.2</p>
+                                    <p class="text-sm text-yellow-500">Moderate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Plans -->
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Training Plans</h3>
+                        <button class="px-4 py-2 text-sm bg-primary text-white rounded-md">
+                            Create Plan
+                        </button>
+                    </div>
+                    
+                    <!-- Plan Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Active Plan -->
+                        <div class="border border-primary rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs bg-primary bg-opacity-10 text-primary px-2 py-1 rounded">Active</span>
+                                    <h4 class="font-semibold mt-2">Trail Half Marathon</h4>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">12-week training plan for trail half marathon</p>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Progress</span>
+                                    <span>Week 4/12</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full">
+                                    <div class="h-2 bg-primary rounded-full" style="width: 33%"></div>
+                                </div>
+                            </div>
+                            <button class="w-full px-4 py-2 text-sm bg-primary text-white rounded-md">
+                                View Plan
+                            </button>
+                        </div>
+
+                        <!-- Completed Plan -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Completed</span>
+                                    <h4 class="font-semibold mt-2">5K Improver</h4>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">8-week plan to improve 5K time</p>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Result</span>
+                                    <span class="text-green-600">-2:45 min</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full">
+                                    <div class="h-2 bg-green-500 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <button class="w-full px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                View Results
+                            </button>
+                        </div>
+
+                        <!-- Upcoming Plan -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">Upcoming</span>
+                                    <h4 class="font-semibold mt-2">Ultra Training</h4>
+                                </div>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">16-week ultra marathon preparation</p>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Starts</span>
+                                    <span>In 2 weeks</span>
+                                </div>
+                                <div class="h-2 bg-gray-200 rounded-full">
+                                    <div class="h-2 bg-gray-400 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <button class="w-full px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                Preview Plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Workouts -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Upcoming Workouts</h3>
+                    <div class="space-y-4">
+                        <!-- Today's Workout -->
+                        <div class="border border-primary rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs bg-primary bg-opacity-10 text-primary px-2 py-1 rounded">Today</span>
+                                    <h4 class="font-semibold mt-2">Hill Repeats</h4>
+                                    <p class="text-sm text-gray-500">8x400m hill repeats with 2min recovery</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-medium">45 min</p>
+                                    <p class="text-xs text-gray-500">Moderate Intensity</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tomorrow's Workout -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">Tomorrow</span>
+                                    <h4 class="font-semibold mt-2">Recovery Run</h4>
+                                    <p class="text-sm text-gray-500">Easy-paced run on flat terrain</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-medium">30 min</p>
+                                    <p class="text-xs text-gray-500">Low Intensity</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Initialize weekly progress chart
+        const ctx = document.getElementById('weeklyProgressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Distance (km)',
+                    data: [5, 8, 0, 12, 5, 15, 8],
+                    borderColor: '#fc4c02',
+                    backgroundColor: 'rgba(252, 76, 2, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

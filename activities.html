@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrailRunner PH | My Activities</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="navigation.js" defer></script>
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+        // Initialize Supabase client
+        const supabase = createClient(
+            "https://yswgkemxlueyssnxartr.supabase.co",
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ"
+        );
+
+        // Check if user is authenticated
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!user) {
+            window.location.href = "login.html";
+        }
+
+        // Add navigation handler
+        window.navigate = async (path) => {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (user) {
+                window.location.href = path;
+            } else {
+                window.location.href = "login.html";
+            }
+        };
+
+        // Handle logout
+        document.getElementById('logoutButton').addEventListener('click', async function() {
+            await supabase.auth.signOut();
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+
+        // Add click handlers to navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const path = this.getAttribute('href');
+                    navigate(path);
+                });
+            });
+        });
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#fc4c02',
+                        secondary: '#f93e17',
+                        accent: '#10b981',
+                        danger: '#ef4444',
+                        dark: '#1f2937',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        }
+
+        // Check if we came from dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            const fromDashboard = sessionStorage.getItem('from_dashboard');
+            if (fromDashboard === 'true') {
+                // Clear the flag
+                sessionStorage.removeItem('from_dashboard');
+                // Highlight the active state
+                const activitiesButton = document.querySelector('[data-page="activities"]');
+                if (activitiesButton) {
+                    activitiesButton.classList.add('bg-gray-100');
+                    activitiesButton.querySelector('i').classList.add('text-primary');
+                }
+            }
+        });
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 bg-white shadow-lg hidden md:block transition-all duration-300 ease-in-out">
+            <div class="md:hidden p-4 flex justify-end">
+                <button onclick="toggleMobileMenu()" class="text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-running text-primary mr-2"></i>
+                    TrailRunner PH
+                </h1>
+            </div>
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-map-marked-alt text-gray-500 mr-3"></i>
+                            <span>Explore</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='activities.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg bg-gray-100">
+                            <i class="fas fa-route text-primary mr-3"></i>
+                            <span>My Activities</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='challenges.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-trophy mr-3 text-gray-500"></i>
+                            <span>Challenges</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='clubs.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-users mr-3 text-gray-500"></i>
+                            <span>Clubs</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="window.location.href='training.html'" class="w-full flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chart-line mr-3 text-gray-500"></i>
+                            <span>Training</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm">
+                <div class="px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="toggleMobileMenu()" class="md:hidden text-gray-500 mr-2">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-lg font-semibold text-gray-800">My Activities</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="logoutButton" class="px-4 py-2 text-sm bg-danger text-white rounded-md">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Activities Content -->
+            <main class="p-6">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Activity Summary</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Total Distance</p>
+                            <p class="text-2xl font-bold">156.4 km</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Total Time</p>
+                            <p class="text-2xl font-bold">15h 42m</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Elevation Gain</p>
+                            <p class="text-2xl font-bold">3,240m</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-500">Activities</p>
+                            <p class="text-2xl font-bold">24</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">Recent Activities</h3>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                Filter
+                            </button>
+                            <button class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                Sort
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity List -->
+                    <div class="space-y-4">
+                        <!-- Activity Item -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-running text-primary text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold">Morning Trail Run</h4>
+                                        <p class="text-sm text-gray-500">Today at 6:30 AM</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold">8.4 km</p>
+                                    <p class="text-sm text-gray-500">45:12</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between">
+                                <div class="flex space-x-4 text-sm text-gray-500">
+                                    <span><i class="fas fa-heart-rate mr-1"></i> 156 bpm</span>
+                                    <span><i class="fas fa-mountain mr-1"></i> 234m</span>
+                                    <span><i class="fas fa-fire mr-1"></i> 420 cal</span>
+                                </div>
+                                <button class="text-primary text-sm font-medium">View Details</button>
+                            </div>
+                        </div>
+
+                        <!-- More Activity Items -->
+                        <!-- Copy and modify the above activity item structure for more items -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('fixed');
+            sidebar.classList.toggle('inset-0');
+            sidebar.classList.toggle('z-50');
+        }
+    </script>
+</body>
+</html> 
