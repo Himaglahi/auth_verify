@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticating... - TrailRunner PH</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a1a;
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+
+        .loader-container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #00aaff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #00aaff;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            font-size: 18px;
+            margin-top: 20px;
+            color: #888;
+            min-height: 27px;
+            transition: color 0.3s ease;
+        }
+
+        .status-icon {
+            font-size: 24px;
+            margin-bottom: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-icon.success {
+            color: #00cc66;
+        }
+
+        .status-icon.error {
+            color: #ff4444;
+        }
+
+        .fade-in {
+            opacity: 1;
+        }
+
+        .retry-button {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #00aaff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .retry-button:hover {
+            background: #0088cc;
+        }
+
+        @media (max-width: 480px) {
+            .loader-container {
+                width: 90%;
+                padding: 15px;
+            }
+
+            .message {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="status-icon">
+            <i class="fas fa-check-circle success"></i>
+            <i class="fas fa-times-circle error"></i>
+        </div>
+        <span class="loader"></span>
+        <div class="progress-container">
+            <div class="progress-bar"></div>
+        </div>
+        <div class="message">Completing authentication...</div>
+        <button class="retry-button">Retry Authentication</button>
+    </div>
+
+    <script type="module" src="../js/oauth.js"></script>
+    <script>
+        let currentProgress = 0;
+        const progressSteps = [
+            { progress: 20, message: 'Verifying credentials...' },
+            { progress: 40, message: 'Setting up secure session...' },
+            { progress: 60, message: 'Syncing profile data...' },
+            { progress: 80, message: 'Initializing real-time features...' },
+            { progress: 100, message: 'Redirecting to dashboard...' }
+        ];
+
+        function updateProgress() {
+            const progressBar = document.querySelector('.progress-bar');
+            const messageEl = document.querySelector('.message');
+            
+            if (currentProgress < progressSteps.length) {
+                const step = progressSteps[currentProgress];
+                progressBar.style.width = `${step.progress}%`;
+                messageEl.textContent = step.message;
+                currentProgress++;
+                
+                if (currentProgress < progressSteps.length) {
+                    setTimeout(updateProgress, 800);
+                }
+            }
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.loader-container');
+            const loader = document.querySelector('.loader');
+            const messageEl = document.querySelector('.message');
+            const retryButton = document.querySelector('.retry-button');
+            const errorIcon = document.querySelector('.status-icon .error');
+            
+            loader.style.display = 'none';
+            messageEl.style.color = '#ff4444';
+            messageEl.textContent = message;
+            retryButton.style.display = 'inline-block';
+            errorIcon.parentElement.classList.add('fade-in');
+        }
+
+        function showSuccess() {
+            const loader = document.querySelector('.loader');
+            const successIcon = document.querySelector('.status-icon .success');
+            
+            loader.style.display = 'none';
+            successIcon.parentElement.classList.add('fade-in');
+        }
+
+        // Start progress animation
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProgress();
+
+            // Handle retry button
+            document.querySelector('.retry-button').addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            // Listen for authentication events
+            window.addEventListener('authSuccess', () => {
+                showSuccess();
+            });
+
+            window.addEventListener('authError', (event) => {
+                showError(event.detail.message);
+            });
+        });
+    </script>
+</body>
+</html> 

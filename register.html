@@ -2,193 +2,311 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Register</title>
+  <title>Register - TrailRunner PH</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background: url('https://samalcity.gov.ph/images/Headline/funrun2024.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #fff;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      justify-content: center;
+      padding: 20px;
     }
 
     .register-container {
-      
+      background: rgba(0, 0, 0, 0.8);
       padding: 40px;
-      border-radius: 16px;
+      border-radius: 20px;
       width: 100%;
       max-width: 400px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
     h2 {
       margin-bottom: 24px;
       font-size: 28px;
       font-weight: 600;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #888;
     }
 
     input[type="text"],
     input[type="email"],
     input[type="password"] {
       width: 100%;
-      padding: 14px 16px;
-      margin-bottom: 16px;
-      background: #1e1e2f;
+      padding: 12px;
       border: 1px solid #444;
-      border-radius: 10px;
-      color: #fff;
-      font-size: 15px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      font-size: 16px;
     }
 
-    input:focus {
-      border-color: #0a0a0a;
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
       outline: none;
+      border-color: #fc4c02;
+      box-shadow: 0 0 0 2px rgba(252, 76, 2, 0.2);
     }
 
     .password-wrapper {
       position: relative;
     }
 
-    .password-wrapper input {
-      padding-right: 40px;
-    }
-
     .toggle-password {
       position: absolute;
-      right: 12px;
+      right: 16px;
       top: 50%;
       transform: translateY(-50%);
-      cursor: pointer;
       color: #aaa;
-      font-size: 1.1rem;
+      cursor: pointer;
+      transition: color 0.3s ease;
     }
 
-    button {
-      width: 100%;
-      padding: 14px;
-      background-color: #00aaff;
-      border: none;
-      border-radius: 10px;
+    .toggle-password:hover {
       color: #fff;
+    }
+
+    .password-strength {
+      margin: 10px 0;
+      text-align: left;
+    }
+
+    .strength-meter {
+      height: 4px;
+      background: #444;
+      border-radius: 2px;
+      margin: 5px 0;
+    }
+
+    .strength-meter div {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .strength-text {
+      font-size: 12px;
+      margin-top: 5px;
+      color: #888;
+    }
+
+    .weak { background-color: #ff4444; }
+    .medium { background-color: #ffaa00; }
+    .strong { background-color: #00aa44; }
+
+    .password-requirements {
+      text-align: left;
+      margin: 10px 0;
+    }
+
+    .requirement {
+      font-size: 12px;
+      color: #aaa;
+      margin: 3px 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .requirement i {
+      margin-right: 5px;
+      font-size: 14px;
+    }
+
+    .requirement.met {
+      color: #00aa44;
+    }
+
+    .terms-section {
+      margin: 15px 0;
+      text-align: left;
+    }
+
+    .terms-checkbox {
+      display: flex;
+      align-items: flex-start;
+      margin: 10px 0;
+    }
+
+    .terms-checkbox input {
+      margin-top: 4px;
+      margin-right: 8px;
+    }
+
+    .terms-checkbox label {
+      font-size: 12px;
+      color: #fff;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #fc4c02;
+      border: none;
+      border-radius: 8px;
+      color: white;
       font-size: 16px;
       font-weight: 500;
       cursor: pointer;
       transition: background 0.3s ease;
     }
 
-    button:hover {
-      background-color: #007acc;
+    button[type="submit"]:hover {
+      background: #f93e17;
     }
 
-    p {
-      margin-top: 16px;
-      font-size: 14px;
+    button:disabled {
+      background-color: #666;
+      cursor: not-allowed;
     }
 
-    a {
-      color: #080808;
+    .footer-links {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .footer-links a {
+      color: #fc4c02;
       text-decoration: none;
     }
 
-    a:hover {
+    .footer-links a:hover {
       text-decoration: underline;
     }
 
     .alert {
-      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
       font-size: 14px;
-      text-align: center;
+      display: none;
     }
 
-    .alert.success {
-      background-color: #28a745;
-      padding: 10px;
-      border-radius: 8px;
-      color: white;
-    }
+    .alert.error { background-color: #ff4444; }
+    .alert.warning { background-color: #ff9900; }
+    .alert.success { background-color: #00aa44; }
+    .alert.info { background-color: #00aaff; }
 
-    .alert.error {
-      background-color: #dc3545;
-      padding: 10px;
-      border-radius: 8px;
-      color: white;
+    @media (max-width: 480px) {
+      .register-container {
+        padding: 30px 20px;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="register-container">
-    <h2>Register</h2>
-    <form onsubmit="register(event)">
-      <input type="text" id="name" placeholder="Full Name" required />
-      <input type="email" id="email" placeholder="Email" required />
-
-      <div class="password-wrapper">
-        <input type="password" id="password" placeholder="Password" required />
-        <i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
+    <h2>Create Account</h2>
+    
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input 
+          type="text" 
+          id="name" 
+          placeholder="Enter your full name" 
+          required 
+        />
       </div>
 
-      <button type="submit">Register</button>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          placeholder="Enter your email" 
+          required 
+        />
+      </div>
 
-      <p><a href="login.html">Already have an account? Login</a></p>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input 
+            type="password" 
+            id="password" 
+            placeholder="Create a password" 
+            required 
+          />
+          <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+        </div>
+
+        <div class="password-strength">
+          <div class="strength-meter">
+            <div id="strengthBar" style="width: 0%"></div>
+          </div>
+          <div class="strength-text" id="strengthText">Password strength: Too weak</div>
+        </div>
+
+        <div class="password-requirements">
+          <div class="requirement" id="length">
+            <i class="fas fa-circle"></i> At least 8 characters
+          </div>
+          <div class="requirement" id="uppercase">
+            <i class="fas fa-circle"></i> One uppercase letter
+          </div>
+          <div class="requirement" id="lowercase">
+            <i class="fas fa-circle"></i> One lowercase letter
+          </div>
+          <div class="requirement" id="number">
+            <i class="fas fa-circle"></i> One number
+          </div>
+          <div class="requirement" id="special">
+            <i class="fas fa-circle"></i> One special character
+          </div>
+        </div>
+      </div>
+
+      <div class="terms-section">
+        <div class="terms-checkbox">
+          <input type="checkbox" id="termsCheckbox" required />
+          <label for="termsCheckbox">
+            I agree to the Terms of Service and Privacy Policy
+          </label>
+        </div>
+      </div>
+
       <div id="message" class="alert"></div>
+
+      <button type="submit" id="registerButton" disabled>Create Account</button>
     </form>
+
+    <div class="footer-links">
+      <p>Already have an account? <a href="login.html">Login</a></p>
+    </div>
   </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    const supabase = createClient(
-      "https://yswgkemxlueyssnxartr.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ"
-    );
-
-    window.register = async function (e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const messageDiv = document.getElementById("message");
-
-      messageDiv.textContent = "";
-      messageDiv.className = "alert";
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { name },
-        },
-      });
-
-      if (error) {
-        messageDiv.textContent = error.message;
-        messageDiv.classList.add("error");
-        return;
-      }
-
-      messageDiv.textContent = "Registered successfully! Please verify your email.";
-      messageDiv.classList.add("success");
-    };
-
-    document.getElementById("togglePassword").addEventListener("click", () => {
-      const passwordInput = document.getElementById("password");
-      const isHidden = passwordInput.type === "password";
-      passwordInput.type = isHidden ? "text" : "password";
-
-      const icon = document.getElementById("togglePassword");
-      icon.classList.toggle("fa-eye");
-      icon.classList.toggle("fa-eye-slash");
-    });
-  </script>
+  <script type="module" src="register.js"></script>
 </body>
 </html>

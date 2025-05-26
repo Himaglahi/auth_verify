@@ -11,18 +11,246 @@
     <script src="navigation.js" defer></script>
     <script type="module">
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+        import { SUPABASE_CONFIG, SESSION_CONFIG } from './js/config/index.js';
 
         // Initialize Supabase client
         const supabase = createClient(
-            "https://yswgkemxlueyssnxartr.supabase.co",
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlzd2drZW14bHVleXNzbnhhcnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTIwMjIsImV4cCI6MjA2MDcyODAyMn0.BewVaPObxMnFHVNyRn-d1pFOnqCrHYXQ7W5BTysgRPQ"
+            SUPABASE_CONFIG.SUPABASE_URL,
+            SUPABASE_CONFIG.SUPABASE_ANON_KEY,
+            {
+                ...SUPABASE_CONFIG.CLIENT_OPTIONS,
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
         );
 
-        // Check if user is authenticated
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (!user) {
-            window.location.href = "login.html";
+        // Track authentication state
+        let isCheckingAuth = false;
+        let isAuthenticated = false;
+
+        // Show/hide auth overlay with timeout
+        function toggleAuthOverlay(show) {
+            const overlay = document.getElementById('authOverlay');
+            if (overlay) {
+                if (show) {
+                    overlay.style.display = 'flex';
+                    // Auto-hide overlay after 10 seconds to prevent infinite loading
+                    setTimeout(() => {
+                        if (overlay.style.display === 'flex') {
+                            overlay.style.display = 'none';
+                            console.log('Auth check timed out');
+                        }
+                    }, 10000);
+                } else {
+                    overlay.style.display = 'none';
+                }
+            }
         }
+
+        // Check if session is valid
+        function isValidSession(session) {
+            if (!session) return false;
+            
+            try {
+                // Check if session has not expired
+                const expiryTime = new Date(session.expires_at * 1000);
+                const currentTime = new Date();
+                const bufferTime = SESSION_CONFIG.expiryBuffer || 5 * 60 * 1000; // 5 minutes buffer
+                
+                return currentTime < new Date(expiryTime.getTime() - bufferTime);
+            } catch (error) {
+                console.error('Error checking session validity:', error);
+                return false;
+            }
+        }
+
+        // Store session securely
+        function storeSession(session) {
+            if (!session) return;
+            
+            try {
+                const sessionData = {
+                    access_token: session.access_token,
+                    refresh_token: session.refresh_token,
+                    expires_at: session.expires_at,
+                    user: session.user,
+                    timestamp: new Date().getTime()
+                };
+                localStorage.setItem('auth_session', JSON.stringify(sessionData));
+            } catch (error) {
+                console.error('Error storing session:', error);
+            }
+        }
+
+        // Get stored session
+        function getStoredSession() {
+            try {
+                const storedSession = localStorage.getItem('auth_session');
+                if (!storedSession) return null;
+
+                const sessionData = JSON.parse(storedSession);
+                // Check if session was stored in the last 24 hours
+                const isRecent = (new Date().getTime() - sessionData.timestamp) < 24 * 60 * 60 * 1000;
+                return isRecent ? sessionData : null;
+            } catch (error) {
+                console.error('Error getting stored session:', error);
+                return null;
+            }
+        }
+
+        // Check authentication status
+        async function checkAuth() {
+            // Prevent multiple simultaneous checks
+            if (isCheckingAuth) {
+                console.log('Auth check already in progress');
+                return;
+            }
+
+            // If already authenticated, don't check again
+            if (isAuthenticated) {
+                console.log('Already authenticated');
+                return;
+            }
+
+            isCheckingAuth = true;
+            toggleAuthOverlay(true);
+
+            try {
+                // Get stored session first
+                const storedSession = getStoredSession();
+                
+                // Then verify with Supabase
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    throw error;
+                }
+
+                // Use either the Supabase session or stored session
+                const currentSession = session || storedSession;
+
+                if (!currentSession) {
+                    console.log('No valid session found');
+                    redirectToLogin();
+                    return;
+                }
+
+                // Validate the session
+                if (!isValidSession(currentSession)) {
+                    console.log('Session is invalid or expired');
+                    redirectToLogin();
+                    return;
+                }
+
+                // Store the valid session
+                storeSession(currentSession);
+                isAuthenticated = true;
+
+                // Update UI
+                updateUserInterface(currentSession);
+                
+                // Hide auth overlay
+                toggleAuthOverlay(false);
+
+            } catch (error) {
+                console.error('Auth check error:', error);
+                redirectToLogin();
+            } finally {
+                isCheckingAuth = false;
+            }
+        }
+
+        // Update user interface with session data
+        function updateUserInterface(session) {
+            if (!session?.user) return;
+
+            const userName = document.querySelector('.user-name');
+            if (userName) {
+                userName.textContent = session.user.email || session.user.user_metadata?.name || 'User';
+            }
+        }
+
+        function redirectToLogin() {
+            // Clear auth states
+            isCheckingAuth = false;
+            isAuthenticated = false;
+            
+            // Clear session
+            localStorage.removeItem('auth_session');
+            
+            // Redirect
+            const baseUrl = window.location.pathname.includes('/auth_verify') 
+                ? '/auth_verify'
+                : '';
+            window.location.href = `${baseUrl}/login.html`;
+        }
+
+        // Handle logout
+        window.handleLogout = async function() {
+            if (isCheckingAuth) return; // Prevent logout during auth check
+
+            try {
+                toggleAuthOverlay(true);
+                
+                // Sign out from Supabase
+                await supabase.auth.signOut();
+                
+                // Reset auth states
+                isAuthenticated = false;
+                isCheckingAuth = false;
+                
+                // Clear stored session
+                localStorage.removeItem('auth_session');
+                
+                redirectToLogin();
+            } catch (error) {
+                console.error('Logout error:', error);
+                toggleAuthOverlay(false);
+            }
+        }
+
+        // Set up real-time session monitoring with debounce
+        let authChangeTimeout;
+        supabase.auth.onAuthStateChange((event, session) => {
+            // Clear existing timeout
+            if (authChangeTimeout) {
+                clearTimeout(authChangeTimeout);
+            }
+            
+            // Set new timeout to debounce multiple rapid auth state changes
+            authChangeTimeout = setTimeout(() => {
+                console.log('Auth state changed:', event);
+
+                switch (event) {
+                    case 'SIGNED_OUT':
+                        isAuthenticated = false;
+                        localStorage.removeItem('auth_session');
+                        redirectToLogin();
+                        break;
+                        
+                    case 'SIGNED_IN':
+                    case 'TOKEN_REFRESHED':
+                        if (session) {
+                            isAuthenticated = true;
+                            storeSession(session);
+                            updateUserInterface(session);
+                        }
+                        break;
+                        
+                    default:
+                        // Ignore other events
+                        break;
+                }
+            }, 1000); // 1 second debounce
+        });
+
+        // Check auth only once on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!isAuthenticated && !isCheckingAuth) {
+                checkAuth();
+            }
+        });
 
         // Set up navigation state
         document.addEventListener('DOMContentLoaded', function() {
@@ -170,9 +398,98 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Auth-specific styles */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .auth-message {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #fc4c02;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Add this to your existing styles */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .logout-button {
+            padding: 8px 16px;
+            background: #fc4c02;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-button:hover {
+            background: #e44400;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Auth Check Overlay -->
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-message">
+            <div class="loading-spinner"></div>
+            <p>Checking authentication...</p>
+        </div>
+    </div>
+
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <div class="sidebar w-64 bg-white shadow-lg hidden md:block transition-all duration-300 ease-in-out">

@@ -1,123 +1,425 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Login</title>
+  <title>Login - TrailRunner PH</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Security Headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data:; connect-src 'self' https: wss: ws:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="strict-origin">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
       background: url('https://samalcity.gov.ph/images/Headline/funrun2024.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #fff;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      padding: 20px;
     }
 
     .login-container {
+      background: rgba(0, 0, 0, 0.8);
       padding: 40px;
-      border-radius: 10px;
+      border-radius: 20px;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 0px 0px rgba(0, 0, 0, 0.6);
-      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 24px;
+      background: #fff;
+      border-radius: 50%;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo img {
+      max-width: 100%;
+      height: auto;
     }
 
     h2 {
       margin-bottom: 24px;
       font-size: 28px;
       font-weight: 600;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #888;
+    }
+
+    .form-group .input-wrapper {
+      position: relative;
     }
 
     input[type="email"],
     input[type="password"] {
       width: 100%;
-      padding: 14px 16px;
-      margin-bottom: 16px;
+      padding: 12px;
       border: 1px solid #444;
-      border-radius: 10px;
-      background-color: #1e1e2f;
-      color: #fff;
-      font-size: 15px;
-      transition: border 0.3s ease;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #00aaff;
-    }
-
-    button {
-      width: 100%;
-      padding: 14px;
-      background-color: #00aaff;
-      border: none;
-      border-radius: 10px;
-      color: #fff;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
       font-size: 16px;
-      font-weight: 500;
+      transition: all 0.3s ease;
+      padding-left: 35px;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #fc4c02;
+      box-shadow: 0 0 0 2px rgba(252, 76, 2, 0.2);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: all 0.3s ease;
+      background: none;
+      border: none;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      outline: none;
+      z-index: 1;
     }
 
-    button:hover {
-      background-color: #007acc;
+    .toggle-password:hover {
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.1);
     }
 
-    p {
-      margin-top: 20px;
-      font-size: 14px;
+    .toggle-password:active {
+      transform: translateY(-50%) scale(0.95);
     }
 
-    a {
-      color: #00aaff;
-      text-decoration: none;
+    .toggle-password i {
+      font-size: 16px;
+      line-height: 1;
+      display: block;
     }
 
-    a:hover {
-      text-decoration: underline;
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 20px;
+      }
+
+      .toggle-password {
+        padding: 6px;
+      }
+      
+      .toggle-password i {
+        font-size: 14px;
+      }
+
+      input[type="email"],
+      input[type="password"] {
+        font-size: 14px;
+      }
     }
 
     .alert {
-      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
       font-size: 14px;
-      color: red;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    .robot-checkbox {
+    .alert.show {
+      display: block;
+      opacity: 1;
+    }
+
+    .alert.error { background-color: #ff4444; }
+    .alert.warning { background-color: #ff9900; }
+    .alert.success { background-color: #00aa44; }
+    .alert.info { background-color: #00aaff; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background: #fc4c02;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button[type="submit"]:hover {
+      background: #f93e17;
+    }
+
+    button[type="submit"]:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+    }
+
+    .button-content {
       display: flex;
       align-items: center;
-      margin-top: 10px;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ffffff;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .footer-links {
+      margin-top: 20px;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .footer-links a {
+      color: #fc4c02;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+      color: #f93e17;
+    }
+
+    .verification-status {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      right: 40px;
+      color: #888;
+      display: none;
+    }
+
+    .verification-status.verified {
+      color: #00aa44;
+    }
+
+    .social-login {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .social-login p {
+      color: #888;
+      margin-bottom: 15px;
+    }
+
+    .social-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .social-button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .google-login {
+      background-color: #fff;
+      color: #333;
+    }
+
+    .facebook-login {
+      background-color: #1877f2;
+      color: white;
+    }
+
+    .instagram-login {
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      color: white;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 20px 0;
+      color: #666;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #444;
+    }
+
+    .divider span {
+      padding: 0 10px;
     }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>Login</h2>
-    <form id="loginForm">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
+    <div class="logo">
+      <img src="assets/logo.png" alt="TrailRunner PH Logo" onerror="this.src='https://via.placeholder.com/120'">
+    </div>
+    
+    <h2>Welcome Back</h2>
+
+    <div id="message" class="alert"></div>
+
+    <div class="social-login">
+      <p>Login with</p>
+      <div class="social-buttons">
+        <button id="googleLogin" class="social-button google-login">
+          <i class="fab fa-google"></i>
+          Google
+        </button>
+        <button id="facebookLogin" class="social-button facebook-login">
+          <i class="fab fa-facebook-f"></i>
+          Facebook
+        </button>
+        <button id="instagramLogin" class="social-button instagram-login">
+          <i class="fab fa-instagram"></i>
+          Instagram
+        </button>
+      </div>
+    </div>
+
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <div class="input-wrapper">
+          <i class="fas fa-envelope input-icon"></i>
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            placeholder="Enter your email" 
+            autocomplete="email"
+            required 
+          />
+        </div>
+      </div>
       
-      <!-- I'm not a robot checkbox -->
-      <div class="robot-checkbox">
-        <input type="checkbox" id="robotCheckbox" required />
-        <label for="robotCheckbox">I'm not a robot</label>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <i class="fas fa-lock input-icon"></i>
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            placeholder="Enter your password" 
+            autocomplete="current-password"
+            required 
+          />
+          <button type="button" class="toggle-password" id="togglePassword" tabindex="-1">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
       </div>
 
-      <button type="submit">Login</button>
-      <p>Don't have an account? <a href="register.html">Register</a></p>
-      <div class="alert" id="message"></div>
+      <button type="submit" id="loginButton">
+        <div class="button-content">
+          <span class="button-text">Login</span>
+          <div class="spinner"></div>
+        </div>
+      </button>
     </form>
+
+    <div class="footer-links">
+      <a href="forgot-password.html">Forgot Password?</a>
+      <a href="register.html">Create Account</a>
+    </div>
   </div>
 
-  <script type="module" src="login.js"></script>
+  <!-- Load Google API -->
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+  <!-- Load application scripts -->
+  <script type="module" src="js/login.js"></script>
+
+  <!-- Error handling for script loading -->
+  <script>
+    window.addEventListener('error', function(e) {
+      if (e.target.tagName === 'SCRIPT') {
+        console.error('Script loading error:', e.target.src);
+        const message = document.getElementById('message');
+        if (message) {
+          message.textContent = 'Error loading application scripts';
+          message.className = 'alert error show';
+        }
+      }
+    });
+  </script>
 </body>
 </html>

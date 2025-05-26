@@ -1,0 +1,29 @@
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+# Enable module loading
+AddType application/javascript .js
+AddType application/json .json
+
+# Handle module MIME types
+<FilesMatch "\.js$">
+    Header set Content-Type "application/javascript"
+</FilesMatch>
+
+# Enable directory listing
+Options +Indexes
+
+# Enable FollowSymLinks
+Options +FollowSymLinks
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Redirect all requests to index.html except for actual files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.html [L]
+
+# Handle errors
+ErrorDocument 404 /404.html 
