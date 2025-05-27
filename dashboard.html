@@ -11,7 +11,7 @@
     <script src="navigation.js" defer></script>
     <script type="module">
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-        import { SUPABASE_CONFIG, SESSION_CONFIG } from './js/config/index.js';
+        import { SUPABASE_CONFIG } from './js/config/index.js';
 
         // Initialize Supabase client
         const supabase = createClient(
@@ -25,161 +25,53 @@
             }
         );
 
-        // Track authentication state
-        let isCheckingAuth = false;
-        let isAuthenticated = false;
-
-        // Show/hide auth overlay with timeout
+        // Show/hide auth overlay
         function toggleAuthOverlay(show) {
             const overlay = document.getElementById('authOverlay');
             if (overlay) {
-                if (show) {
-                    overlay.style.display = 'flex';
-                    // Auto-hide overlay after 10 seconds to prevent infinite loading
-                    setTimeout(() => {
-                        if (overlay.style.display === 'flex') {
-                            overlay.style.display = 'none';
-                            console.log('Auth check timed out');
-                        }
-                    }, 10000);
-                } else {
-                    overlay.style.display = 'none';
-                }
-            }
-        }
-
-        // Check if session is valid
-        function isValidSession(session) {
-            if (!session) return false;
-            
-            try {
-                // Check if session has not expired
-                const expiryTime = new Date(session.expires_at * 1000);
-                const currentTime = new Date();
-                const bufferTime = SESSION_CONFIG.expiryBuffer || 5 * 60 * 1000; // 5 minutes buffer
-                
-                return currentTime < new Date(expiryTime.getTime() - bufferTime);
-            } catch (error) {
-                console.error('Error checking session validity:', error);
-                return false;
-            }
-        }
-
-        // Store session securely
-        function storeSession(session) {
-            if (!session) return;
-            
-            try {
-                const sessionData = {
-                    access_token: session.access_token,
-                    refresh_token: session.refresh_token,
-                    expires_at: session.expires_at,
-                    user: session.user,
-                    timestamp: new Date().getTime()
-                };
-                localStorage.setItem('auth_session', JSON.stringify(sessionData));
-            } catch (error) {
-                console.error('Error storing session:', error);
-            }
-        }
-
-        // Get stored session
-        function getStoredSession() {
-            try {
-                const storedSession = localStorage.getItem('auth_session');
-                if (!storedSession) return null;
-
-                const sessionData = JSON.parse(storedSession);
-                // Check if session was stored in the last 24 hours
-                const isRecent = (new Date().getTime() - sessionData.timestamp) < 24 * 60 * 60 * 1000;
-                return isRecent ? sessionData : null;
-            } catch (error) {
-                console.error('Error getting stored session:', error);
-                return null;
+                overlay.style.display = show ? 'flex' : 'none';
             }
         }
 
         // Check authentication status
         async function checkAuth() {
-            // Prevent multiple simultaneous checks
-            if (isCheckingAuth) {
-                console.log('Auth check already in progress');
-                return;
-            }
-
-            // If already authenticated, don't check again
-            if (isAuthenticated) {
-                console.log('Already authenticated');
-                return;
-            }
-
-            isCheckingAuth = true;
+            console.log('Checking authentication...');
             toggleAuthOverlay(true);
 
             try {
-                // Get stored session first
-                const storedSession = getStoredSession();
+                // Get stored session
+                const storedSession = localStorage.getItem('auth_session');
                 
                 // Then verify with Supabase
                 const { data: { session }, error } = await supabase.auth.getSession();
                 
                 if (error) {
+                    console.error('Session error:', error);
                     throw error;
                 }
 
-                // Use either the Supabase session or stored session
-                const currentSession = session || storedSession;
-
-                if (!currentSession) {
-                    console.log('No valid session found');
+                if (!session) {
+                    console.log('No session found, redirecting to login');
                     redirectToLogin();
                     return;
                 }
 
-                // Validate the session
-                if (!isValidSession(currentSession)) {
-                    console.log('Session is invalid or expired');
-                    redirectToLogin();
-                    return;
+                // Update UI with user info
+                const userName = document.querySelector('.user-name');
+                if (userName) {
+                    userName.textContent = session.user.email || session.user.user_metadata?.name || 'User';
                 }
 
-                // Store the valid session
-                storeSession(currentSession);
-                isAuthenticated = true;
-
-                // Update UI
-                updateUserInterface(currentSession);
-                
                 // Hide auth overlay
                 toggleAuthOverlay(false);
 
             } catch (error) {
                 console.error('Auth check error:', error);
                 redirectToLogin();
-            } finally {
-                isCheckingAuth = false;
-            }
-        }
-
-        // Update user interface with session data
-        function updateUserInterface(session) {
-            if (!session?.user) return;
-
-            const userName = document.querySelector('.user-name');
-            if (userName) {
-                userName.textContent = session.user.email || session.user.user_metadata?.name || 'User';
             }
         }
 
         function redirectToLogin() {
-            // Clear auth states
-            isCheckingAuth = false;
-            isAuthenticated = false;
-            
-            // Clear session
-            localStorage.removeItem('auth_session');
-            
-            // Redirect
             const baseUrl = window.location.pathname.includes('/auth_verify') 
                 ? '/auth_verify'
                 : '';
@@ -188,21 +80,10 @@
 
         // Handle logout
         window.handleLogout = async function() {
-            if (isCheckingAuth) return; // Prevent logout during auth check
-
             try {
                 toggleAuthOverlay(true);
-                
-                // Sign out from Supabase
                 await supabase.auth.signOut();
-                
-                // Reset auth states
-                isAuthenticated = false;
-                isCheckingAuth = false;
-                
-                // Clear stored session
                 localStorage.removeItem('auth_session');
-                
                 redirectToLogin();
             } catch (error) {
                 console.error('Logout error:', error);
@@ -210,47 +91,16 @@
             }
         }
 
-        // Set up real-time session monitoring with debounce
-        let authChangeTimeout;
+        // Set up real-time session monitoring
         supabase.auth.onAuthStateChange((event, session) => {
-            // Clear existing timeout
-            if (authChangeTimeout) {
-                clearTimeout(authChangeTimeout);
-            }
-            
-            // Set new timeout to debounce multiple rapid auth state changes
-            authChangeTimeout = setTimeout(() => {
-                console.log('Auth state changed:', event);
-
-                switch (event) {
-                    case 'SIGNED_OUT':
-                        isAuthenticated = false;
-                        localStorage.removeItem('auth_session');
-                        redirectToLogin();
-                        break;
-                        
-                    case 'SIGNED_IN':
-                    case 'TOKEN_REFRESHED':
-                        if (session) {
-                            isAuthenticated = true;
-                            storeSession(session);
-                            updateUserInterface(session);
-                        }
-                        break;
-                        
-                    default:
-                        // Ignore other events
-                        break;
-                }
-            }, 1000); // 1 second debounce
-        });
-
-        // Check auth only once on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!isAuthenticated && !isCheckingAuth) {
-                checkAuth();
+            console.log('Auth state changed:', event);
+            if (event === 'SIGNED_OUT') {
+                redirectToLogin();
             }
         });
+
+        // Check auth on page load
+        document.addEventListener('DOMContentLoaded', checkAuth);
 
         // Set up navigation state
         document.addEventListener('DOMContentLoaded', function() {
@@ -1069,14 +919,14 @@
             // Add popular trails (mock data)
             const trails = [
                 {
-                    name: "Mount Kitanglad Peak",
+                    name: "Mount Dulang-dulang Peak",
                     position: { lat: 10.3157, lng: 123.4854 },
                     difficulty: "moderate",
                     length: 4.2,
                     elevation: 1013
                 },
                 {
-                    name: "Mount Dulang-Dulang (D2)",
+                    name: "Mount Kitanglad",
                     position: { lat: 10.4157, lng: 123.6854 },
                     difficulty: "difficult",
                     length: 8.5,
@@ -1090,14 +940,14 @@
                     elevation: 756
                 },
                 {
-                    name: "Mount Batulao",
+                    name: "Mount Maagnaw",
                     position: { lat: 14.0333, lng: 120.8000 },
                     difficulty: "moderate",
                     length: 6.0,
                     elevation: 811
                 },
                 {
-                    name: "Mount Maculot",
+                    name: "Mount Tuminungan",
                     position: { lat: 13.9333, lng: 121.0167 },
                     difficulty: "moderate",
                     length: 4.5,
@@ -1253,7 +1103,6 @@
                 'activitiesButton': 'activities',
                 'challengesButton': 'challenges',
                 'clubsButton': 'clubs',
-                'recordButton': 'record',
                 'trainingButton': 'training'
             };
 
